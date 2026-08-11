@@ -9,6 +9,7 @@
 
 #include "muffin/MuffinParseLine.hpp"
 #include "muffin/discovery/LocationVisitor.hpp"
+#include "muffin/faults/FaultEnumerator.hpp"
 
 using namespace hif;
 
@@ -30,6 +31,11 @@ auto main(int argc, char *argv[]) -> int
     system->acceptVisitor(locationVisitor);
 
     messageInfo("Found " + std::to_string(locationVisitor.getLocationCount()) + " injectable location(s).");
+
+    muffin::faults::FaultEnumerator faultEnumerator(semantics::HIFSemantics::getInstance());
+    const auto faultList = faultEnumerator.enumerate(locationVisitor.getLocations());
+
+    messageInfo("Enumerated " + std::to_string(faultList.size()) + " stuck-at fault(s).");
 
     delete system;
 
