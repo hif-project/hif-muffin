@@ -10,6 +10,7 @@
 #include "muffin/MuffinParseLine.hpp"
 #include "muffin/discovery/LocationVisitor.hpp"
 #include "muffin/faults/FaultEnumerator.hpp"
+#include "muffin/injection/Instrumenter.hpp"
 #include "muffin/injection/MutPortInjector.hpp"
 
 using namespace hif;
@@ -44,6 +45,11 @@ auto main(int argc, char *argv[]) -> int
     messageInfo(
         "Wired activation port through " + std::to_string(mutPortInjector.getPortCount()) + " view(s) and " +
         std::to_string(mutPortInjector.getPortAssignCount()) + " instance(s).");
+
+    muffin::injection::Instrumenter instrumenter(semantics::HIFSemantics::getInstance());
+    instrumenter.instrument(locationVisitor.getLocations(), faultList);
+
+    messageInfo("Instrumented " + std::to_string(locationVisitor.getLocationCount()) + " location(s).");
 
     delete system;
 
