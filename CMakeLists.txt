@@ -59,6 +59,7 @@ add_executable(
     muffin
     ${CMAKE_SOURCE_DIR}/src/muffin/main.cpp
     ${CMAKE_SOURCE_DIR}/src/muffin/MuffinParseLine.cpp
+    ${CMAKE_SOURCE_DIR}/src/muffin/discovery/LocationVisitor.cpp
 )
 # Include directories.
 target_include_directories(muffin PRIVATE ${CMAKE_SOURCE_DIR}/include ${HIF_INCLUDE_DIR})

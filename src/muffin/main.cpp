@@ -8,35 +8,9 @@
 #include <hif/hif.hpp>
 
 #include "muffin/MuffinParseLine.hpp"
+#include "muffin/discovery/LocationVisitor.hpp"
 
 using namespace hif;
-
-namespace
-{
-
-/// @brief Smallest useful walk over a HIF description: counts the Assign
-/// nodes reachable from the root. Proves the build/link/traversal story
-/// against the current hif-core before any fault-injection logic is added.
-class AssignCounter : public GuideVisitor
-{
-public:
-    AssignCounter() : GuideVisitor(), count(0) {}
-    ~AssignCounter() override = default;
-
-    int visitAssign(Assign &o) override
-    {
-        ++count;
-        return GuideVisitor::visitAssign(o);
-    }
-
-    std::size_t count;
-
-private:
-    AssignCounter(const AssignCounter &)            = delete;
-    AssignCounter &operator=(const AssignCounter &) = delete;
-};
-
-} // namespace
 
 auto main(int argc, char *argv[]) -> int
 {
@@ -52,10 +26,10 @@ auto main(int argc, char *argv[]) -> int
         messageError(std::string("File: ") + inputFile + "\nWrong hif.xml system description.", nullptr, nullptr);
     }
 
-    AssignCounter counter;
-    system->acceptVisitor(counter);
+    muffin::discovery::LocationVisitor locationVisitor;
+    system->acceptVisitor(locationVisitor);
 
-    messageInfo("Found " + std::to_string(counter.count) + " assign(s).");
+    messageInfo("Found " + std::to_string(locationVisitor.getLocationCount()) + " injectable location(s).");
 
     delete system;
 
