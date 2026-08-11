@@ -10,6 +10,7 @@
 #include "muffin/MuffinParseLine.hpp"
 #include "muffin/discovery/LocationVisitor.hpp"
 #include "muffin/faults/FaultEnumerator.hpp"
+#include "muffin/injection/MutPortInjector.hpp"
 
 using namespace hif;
 
@@ -36,6 +37,13 @@ auto main(int argc, char *argv[]) -> int
     const auto faultList = faultEnumerator.enumerate(locationVisitor.getLocations());
 
     messageInfo("Enumerated " + std::to_string(faultList.size()) + " stuck-at fault(s).");
+
+    muffin::injection::MutPortInjector mutPortInjector(semantics::HIFSemantics::getInstance());
+    system->acceptVisitor(mutPortInjector);
+
+    messageInfo(
+        "Wired activation port through " + std::to_string(mutPortInjector.getPortCount()) + " view(s) and " +
+        std::to_string(mutPortInjector.getPortAssignCount()) + " instance(s).");
 
     delete system;
 

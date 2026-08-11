@@ -61,6 +61,7 @@ add_executable(
     ${CMAKE_SOURCE_DIR}/src/muffin/MuffinParseLine.cpp
     ${CMAKE_SOURCE_DIR}/src/muffin/discovery/LocationVisitor.cpp
     ${CMAKE_SOURCE_DIR}/src/muffin/faults/FaultEnumerator.cpp
+    ${CMAKE_SOURCE_DIR}/src/muffin/injection/MutPortInjector.cpp
 )
 # Include directories.
 target_include_directories(muffin PRIVATE ${CMAKE_SOURCE_DIR}/include ${HIF_INCLUDE_DIR})
