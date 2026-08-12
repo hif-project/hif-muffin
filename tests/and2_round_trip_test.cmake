@@ -48,6 +48,7 @@ foreach(expected
     "\"id\": 2"
     "\"type\": \"stuck-at-1\""
     "\"signal\": \"y\""
+    "\"line\": 2"
     "\"source\": \"and2.v\""
 )
     string(FIND "${faults_json_content}" "${expected}" found_at)
