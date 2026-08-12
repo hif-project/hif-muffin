@@ -1,0 +1,83 @@
+name: Nightly Integration
+
+# Unlike ci.yml (which builds pinned, known-good sibling refs), this checks
+# out all four repos at floating `develop` HEAD to catch integration drift
+# between independently-evolving repos before it reaches anyone's PR CI.
+# Scope is deliberately just "rebuild everything, run each repo's own
+# CTest suite" - the same rebuild-and-verify a maintainer would do by hand
+# to establish a new known-good baseline, automated and recurring.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  integration:
+    name: Full-develop rebuild and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout hif-core (develop)
+        uses: actions/checkout@v4
+        with:
+          repository: esd-univr/hif-core
+          ref: develop
+          path: hif-core
+
+      - name: Checkout hif-frontend (develop)
+        uses: actions/checkout@v4
+        with:
+          repository: esd-univr/hif-frontend
+          ref: develop
+          path: hif-frontend
+
+      - name: Checkout hif-backend (develop)
+        uses: actions/checkout@v4
+        with:
+          repository: esd-univr/hif-backend
+          ref: develop
+          path: hif-backend
+
+      - name: Checkout hif-muffin (develop)
+        uses: actions/checkout@v4
+        with:
+          repository: esd-univr/hif-muffin
+          ref: develop
+          path: hif-muffin
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ libpoco-dev flex bison
+
+      - name: Build hif-core
+        run: |
+          cmake -B hif-core/build -S hif-core
+          cmake --build hif-core/build --parallel
+
+      - name: Build hif-frontend
+        run: |
+          cmake -B hif-frontend/build -S hif-frontend
+          cmake --build hif-frontend/build --parallel
+
+      - name: Build hif-backend
+        run: |
+          cmake -B hif-backend/build -S hif-backend
+          cmake --build hif-backend/build --parallel
+
+      - name: Build hif-muffin
+        run: |
+          cmake -B hif-muffin/build -S hif-muffin
+          cmake --build hif-muffin/build --parallel
+
+      - name: Test hif-core
+        run: ctest --test-dir hif-core/build --output-on-failure
+
+      - name: Test hif-frontend
+        run: ctest --test-dir hif-frontend/build --output-on-failure
+
+      - name: Test hif-backend
+        run: ctest --test-dir hif-backend/build --output-on-failure
+
+      - name: Test hif-muffin
+        run: ctest --test-dir hif-muffin/build --output-on-failure
