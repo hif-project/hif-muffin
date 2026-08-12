@@ -7,7 +7,7 @@
 
 #include "muffin/report/FaultReportWriter.hpp"
 
-#include <fstream>
+#include <json/json.hpp>
 #include <map>
 
 #include "muffin/discovery/LocationVisitor.hpp"
@@ -19,28 +19,6 @@ namespace report
 
 namespace
 {
-
-std::string escapeJson(const std::string &s)
-{
-    std::string out;
-    out.reserve(s.size());
-    for (const char c : s) {
-        switch (c) {
-        case '"':
-            out += "\\\"";
-            break;
-        case '\\':
-            out += "\\\\";
-            break;
-        case '\n':
-            out += "\\n";
-            break;
-        default:
-            out += c;
-        }
-    }
-    return out;
-}
 
 std::string baseName(const std::string &path)
 {
@@ -84,36 +62,41 @@ void FaultReportWriter::write(
         byLocationId[static_cast<std::size_t>(idProperty->getValue())] = location;
     }
 
-    std::ofstream out(path);
-    if (!out) {
-        messageError("Could not open " + path + " for writing.", nullptr, nullptr);
-    }
+    // The library defaults to single-quoted strings, which is not valid
+    // JSON; force standard double quotes so consumers like Python's `json`
+    // module can parse the output.
+    json::config::string_delimiter_character = '"';
 
-    out << "{\n";
-    out << "  \"schema_version\": 1,\n";
-    out << "  \"design\": \"" << escapeJson(designName) << "\",\n";
-    out << "  \"golden_fault_id\": 0,\n";
-    out << "  \"faults\": [\n";
+    json::jnode_t root;
+    root.set_type(json::JTYPE_OBJECT);
+    root["schema_version"] << 1;
+    root["design"] << designName;
+    root["golden_fault_id"] << 0;
+
+    json::jnode_t &faultsNode = root["faults"];
+    faultsNode.set_type(json::JTYPE_ARRAY);
+    faultsNode.resize(faults.size());
 
     for (std::size_t i = 0; i < faults.size(); ++i) {
-        const auto &fault  = faults[i];
-        const auto found   = byLocationId.find(fault.locationId);
+        const auto &fault   = faults[i];
+        const auto found    = byLocationId.find(fault.locationId);
         const bool resolved = found != byLocationId.end();
         const std::string signal = resolved ? signalName(found->second->getLeftHandSide()) : "<unknown>";
         const std::string source = resolved ? baseName(found->second->getSourceFileName()) : "";
 
-        out << "    {\n";
-        out << "      \"id\": " << fault.id << ",\n";
-        out << "      \"type\": \"" << faultTypeName(fault.type) << "\",\n";
-        out << "      \"bit\": " << fault.bitIndex << ",\n";
-        out << "      \"width\": " << fault.width << ",\n";
-        out << "      \"signal\": \"" << escapeJson(signal) << "\",\n";
-        out << "      \"source\": \"" << escapeJson(source) << "\"\n";
-        out << "    }" << (i + 1 < faults.size() ? "," : "") << "\n";
+        json::jnode_t &entry = faultsNode[i];
+        entry.set_type(json::JTYPE_OBJECT);
+        entry["id"] << fault.id;
+        entry["type"] << faultTypeName(fault.type);
+        entry["bit"] << fault.bitIndex;
+        entry["width"] << fault.width;
+        entry["signal"] << signal;
+        entry["source"] << source;
     }
 
-    out << "  ]\n";
-    out << "}\n";
+    if (!json::parser::write_file(path, root)) {
+        messageError("Could not write fault report to " + path + ".", nullptr, nullptr);
+    }
 }
 
 } // namespace report
