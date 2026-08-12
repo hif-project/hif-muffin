@@ -51,6 +51,29 @@ find_package(HIF REQUIRED)
 find_program(CLANG_TIDY_EXE NAMES clang-tidy)
 
 # -----------------------------------------------------------------------------
+# DEPENDENCY (FETCHCONTENT LIBRARIES)
+# -----------------------------------------------------------------------------
+
+# Don't build json's own examples/tests as part of our build.
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY "https://github.com/Galfurian/json.git"
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+    GIT_TAG        main
+)
+FetchContent_GetProperties(json)
+if(NOT json_POPULATED)
+    message(STATUS "Retrieving `json`...")
+    FetchContent_MakeAvailable(json)
+    # Hide fetchcontent variables.
+    mark_as_advanced(FORCE FETCHCONTENT_UPDATES_DISCONNECTED_JSON FETCHCONTENT_SOURCE_DIR_JSON)
+endif()
+
+# -----------------------------------------------------------------------------
 # EXECUTABLE: muffin
 # -----------------------------------------------------------------------------
 
@@ -61,11 +84,14 @@ add_executable(
     ${CMAKE_SOURCE_DIR}/src/muffin/MuffinParseLine.cpp
     ${CMAKE_SOURCE_DIR}/src/muffin/discovery/LocationVisitor.cpp
     ${CMAKE_SOURCE_DIR}/src/muffin/faults/FaultEnumerator.cpp
+    ${CMAKE_SOURCE_DIR}/src/muffin/injection/MutPortInjector.cpp
+    ${CMAKE_SOURCE_DIR}/src/muffin/injection/Instrumenter.cpp
+    ${CMAKE_SOURCE_DIR}/src/muffin/report/FaultReportWriter.cpp
 )
 # Include directories.
 target_include_directories(muffin PRIVATE ${CMAKE_SOURCE_DIR}/include ${HIF_INCLUDE_DIR})
 # Link libraries.
-target_link_libraries(muffin PRIVATE ${HIF_LIBRARY})
+target_link_libraries(muffin PRIVATE ${HIF_LIBRARY} json::json)
 # Compilation options.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Disable warnings for MSVC-specific "safe" functions like strcpy_s, etc.,
@@ -114,6 +140,13 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Cl
 endif()
 # Install the executable.
 install(TARGETS muffin DESTINATION bin)
+
+# -----------------------------------------------------------------------------
+# TESTS
+# -----------------------------------------------------------------------------
+
+enable_testing()
+add_subdirectory(tests)
 
 # -----------------------------------------------------------------------------
 # CODE ANALYSIS

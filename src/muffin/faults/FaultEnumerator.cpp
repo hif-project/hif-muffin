@@ -47,8 +47,8 @@ std::vector<Fault> FaultEnumerator::enumerate(const std::vector<hif::Assign *> &
         const std::uint64_t width = getLocationWidth(location);
 
         for (std::uint64_t bit = 0; bit < width; ++bit) {
-            result.push_back(Fault{nextId++, locationId, bit, FaultType::SA0});
-            result.push_back(Fault{nextId++, locationId, bit, FaultType::SA1});
+            result.push_back(Fault{nextId++, locationId, bit, FaultType::SA0, width});
+            result.push_back(Fault{nextId++, locationId, bit, FaultType::SA1, width});
         }
     }
 

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 namespace muffin
 {
@@ -33,6 +34,8 @@ struct Fault {
     std::size_t bitIndex;
     /// @brief The kind of stuck-at fault.
     FaultType type;
+    /// @brief Bit-width of the location this fault belongs to.
+    std::uint64_t width;
 };
 
 } // namespace faults
