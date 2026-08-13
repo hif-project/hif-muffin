@@ -33,21 +33,21 @@ jobs:
       - name: Checkout hif-core (pinned)
         uses: actions/checkout@v4
         with:
-          repository: esd-univr/hif-core
+          repository: hif-project/hif-core
           ref: ${{ env.HIF_CORE_REF }}
           path: hif-core
 
       - name: Checkout hif-frontend (pinned)
         uses: actions/checkout@v4
         with:
-          repository: esd-univr/hif-frontend
+          repository: hif-project/hif-frontend
           ref: ${{ env.HIF_FRONTEND_REF }}
           path: hif-frontend
 
       - name: Checkout hif-backend (pinned)
         uses: actions/checkout@v4
         with:
-          repository: esd-univr/hif-backend
+          repository: hif-project/hif-backend
           ref: ${{ env.HIF_BACKEND_REF }}
           path: hif-backend
 
