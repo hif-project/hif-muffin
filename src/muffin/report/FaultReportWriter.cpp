@@ -69,7 +69,7 @@ void FaultReportWriter::write(
 
     json::jnode_t root;
     root.set_type(json::JTYPE_OBJECT);
-    root["schema_version"] << 1;
+    root["schema_version"] << 2;
     root["design"] << designName;
     root["golden_fault_id"] << 0;
 
@@ -83,6 +83,7 @@ void FaultReportWriter::write(
         const bool resolved = found != byLocationId.end();
         const std::string signal = resolved ? signalName(found->second->getLeftHandSide()) : "<unknown>";
         const std::string source = resolved ? baseName(found->second->getSourceFileName()) : "";
+        const unsigned int line  = resolved ? found->second->getSourceLineNumber() : 0;
 
         json::jnode_t &entry = faultsNode[i];
         entry.set_type(json::JTYPE_OBJECT);
@@ -92,6 +93,7 @@ void FaultReportWriter::write(
         entry["width"] << fault.width;
         entry["signal"] << signal;
         entry["source"] << source;
+        entry["line"] << line;
     }
 
     if (!json::parser::write_file(path, root)) {

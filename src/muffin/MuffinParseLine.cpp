@@ -21,7 +21,7 @@ MuffinParseLine::MuffinParseLine(int argc, char **argv)
         // synopsys
         "muffin [OPTIONS] <HIF FILE>",
         // notes
-        "Site: https://github.com/esd-univr/hif-muffin");
+        "Site: https://github.com/hif-project/hif-muffin");
 
     addHelp();
     addVersion();
