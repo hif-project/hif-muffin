@@ -13,11 +13,8 @@ port. The instrumented HIF can be regenerated back to Verilog by
 Verilog -> hif-frontend -> HIF -> muffin -> instrumented HIF -> hif-backend -> instrumented Verilog
 ```
 
-Part of the HIF toolchain for HDL-independent-format compilation:
-- [hif-core](https://github.com/hif-project/hif-core) — shared AST/IR library
-- [hif-frontend](https://github.com/hif-project/hif-frontend) — Verilog/VHDL → HIF
-- [hif-backend](https://github.com/hif-project/hif-backend) — HIF → Verilog/VHDL(/SystemC)
-- **hif-muffin** (this repo) — RTL fault injection, built on the above
+Part of the HIF project. See https://github.com/hif-project for the
+complete list of repositories and tools.
 
 ![CI](https://github.com/hif-project/hif-muffin/actions/workflows/ci.yml/badge.svg?branch=develop)
 
