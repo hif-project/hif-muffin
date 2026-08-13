@@ -1,27 +1,27 @@
 # HIF Muffin
 
-Automatic fault injection for RTL designs, built on [HIF](https://github.com/esd-univr/hif-core).
+Automatic fault injection for RTL designs, built on [HIF](https://github.com/hif-project/hif-core).
 
 `muffin` takes a HIF description (typically produced from Verilog by
-[hif-frontend](https://github.com/esd-univr/hif-frontend)), discovers
+[hif-frontend](https://github.com/hif-project/hif-frontend)), discovers
 injectable locations, enumerates stuck-at (SA0/SA1) faults, and instruments
 the design so faults can be activated at runtime through a single control
 port. The instrumented HIF can be regenerated back to Verilog by
-[hif-backend](https://github.com/esd-univr/hif-backend).
+[hif-backend](https://github.com/hif-project/hif-backend).
 
 ```
 Verilog -> hif-frontend -> HIF -> muffin -> instrumented HIF -> hif-backend -> instrumented Verilog
 ```
 
 Part of the HIF toolchain for HDL-independent-format compilation:
-- [hif-core](https://github.com/esd-univr/hif-core) — shared AST/IR library
-- [hif-frontend](https://github.com/esd-univr/hif-frontend) — Verilog/VHDL → HIF
-- [hif-backend](https://github.com/esd-univr/hif-backend) — HIF → Verilog/VHDL(/SystemC)
+- [hif-core](https://github.com/hif-project/hif-core) — shared AST/IR library
+- [hif-frontend](https://github.com/hif-project/hif-frontend) — Verilog/VHDL → HIF
+- [hif-backend](https://github.com/hif-project/hif-backend) — HIF → Verilog/VHDL(/SystemC)
 - **hif-muffin** (this repo) — RTL fault injection, built on the above
 
-![CI](https://github.com/esd-univr/hif-muffin/actions/workflows/ci.yml/badge.svg?branch=develop)
+![CI](https://github.com/hif-project/hif-muffin/actions/workflows/ci.yml/badge.svg?branch=develop)
 
-Cross-repository integration/regression testing for the whole HIF ecosystem (this repo included) lives in [hif-regression](https://github.com/esd-univr/hif-regression), not here — this repo owns only its own CI and product tests.
+Cross-repository integration/regression testing for the whole HIF ecosystem (this repo included) lives in [hif-regression](https://github.com/hif-project/hif-regression), not here — this repo owns only its own CI and product tests.
 
 ## Usage
 
@@ -38,8 +38,8 @@ muffin input.hif --instrument -o instrumented.hif.xml # full pipeline, writes in
 
 - Linux (only supported/tested platform)
 - CMake ≥ 3.1, a C++ compiler
-- A build of [hif-core](https://github.com/esd-univr/hif-core), found via `cmake/FindHIF.cmake` (same discovery mechanism used by hif-frontend and hif-backend)
-- To actually run the `and2_round_trip` test: builds of [hif-frontend](https://github.com/esd-univr/hif-frontend) (for `verilog2hif`) and [hif-backend](https://github.com/esd-univr/hif-backend) (for `hif2verilog`) as sibling directories too — see "Running tests" below
+- A build of [hif-core](https://github.com/hif-project/hif-core), found via `cmake/FindHIF.cmake` (same discovery mechanism used by hif-frontend and hif-backend)
+- To actually run the `and2_round_trip` test: builds of [hif-frontend](https://github.com/hif-project/hif-frontend) (for `verilog2hif`) and [hif-backend](https://github.com/hif-project/hif-backend) (for `hif2verilog`) as sibling directories too — see "Running tests" below
 
 ## Building
 
