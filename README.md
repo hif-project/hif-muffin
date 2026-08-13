@@ -20,7 +20,8 @@ Part of the HIF toolchain for HDL-independent-format compilation:
 - **hif-muffin** (this repo) — RTL fault injection, built on the above
 
 ![CI](https://github.com/esd-univr/hif-muffin/actions/workflows/ci.yml/badge.svg?branch=develop)
-![Nightly Integration](https://github.com/esd-univr/hif-muffin/actions/workflows/nightly-integration.yml/badge.svg?branch=develop)
+
+Cross-repository integration/regression testing for the whole HIF ecosystem (this repo included) lives in [hif-regression](https://github.com/esd-univr/hif-regression), not here — this repo owns only its own CI and product tests.
 
 ## Usage
 
