@@ -54,7 +54,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.cc }} libpoco-dev flex bison
+          # iverilog is needed by the behavioral fault-injection test; without
+          # it that test is skipped rather than failed, so it must be installed
+          # here for CI to actually exercise it.
+          sudo apt-get install -y ${{ matrix.cc }} libpoco-dev flex bison iverilog
 
       - name: Build hif-core
         run: |

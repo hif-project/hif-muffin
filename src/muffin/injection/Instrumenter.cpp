@@ -19,7 +19,6 @@ namespace injection
 
 Instrumenter::Instrumenter(hif::semantics::ILanguageSemantics *sem)
     : _factory(sem)
-    , _sem(sem)
 {
     // Nothing to do.
 }
@@ -33,11 +32,17 @@ hif::Value *Instrumenter::buildForcedValue(hif::Value *originalCopy, std::uint64
         return _factory.bitval(forceOne ? '1' : '0');
     }
 
-    const auto bit = static_cast<std::int64_t>(fault.bitIndex);
-    if (forceOne) {
-        return _factory.expression(originalCopy, hif::op_bor, _factory.intval(std::int64_t(1) << bit));
-    }
-    return _factory.expression(originalCopy, hif::op_band, _factory.intval(~(std::int64_t(1) << bit)));
+    // The mask is built as a literal of exactly `width` bits rather than as an
+    // integer shift. `1 << bit` cannot express bit 63 (it overflows into the
+    // sign bit, and the resulting negative decimal sign-extends when it meets a
+    // wider target) and silently wraps for bit >= 64, which would make the
+    // masks for the top bits of a wide vector alias the masks for its bottom
+    // bits. A sized literal has neither problem at any width.
+    std::string mask(static_cast<std::size_t>(width), forceOne ? '0' : '1');
+    mask[static_cast<std::size_t>(width - 1 - fault.bitIndex)] = forceOne ? '1' : '0';
+
+    return _factory.expression(
+        originalCopy, forceOne ? hif::op_bor : hif::op_band, _factory.bitvectorval(mask));
 }
 
 void Instrumenter::instrument(const std::vector<hif::Assign *> &locations, const std::vector<faults::Fault> &faults)
@@ -60,12 +65,6 @@ void Instrumenter::instrument(const std::vector<hif::Assign *> &locations, const
             continue;
         }
 
-        hif::Type *lhsType = hif::semantics::getSemanticType(location->getLeftHandSide(), _sem);
-        std::uint64_t width = lhsType != nullptr ? hif::semantics::typeGetSpanBitwidth(lhsType, _sem) : 0;
-        if (width == 0) {
-            width = 1;
-        }
-
         hif::Value *originalRhs = location->getRightHandSide();
 
         auto *when = new hif::When();
@@ -74,7 +73,7 @@ void Instrumenter::instrument(const std::vector<hif::Assign *> &locations, const
             alt->setCondition(_factory.expression(
                 _factory.identifier(MutPortInjector::MUT_PORT_NAME), hif::op_eq,
                 _factory.intval(static_cast<std::int64_t>(fault->id))));
-            alt->setValue(buildForcedValue(hif::copy(originalRhs), width, *fault));
+            alt->setValue(buildForcedValue(hif::copy(originalRhs), fault->width, *fault));
             when->alts.push_back(alt);
         }
         when->setDefault(originalRhs);

@@ -20,10 +20,13 @@ namespace faults
 /// @brief Enumerates SA0/SA1 stuck-at faults for a set of discovered
 /// locations.
 /// @details For each location, the bit-width is taken from the semantic type
-/// of the assignment's left-hand side (the target being driven). A location
-/// whose width cannot be statically determined is treated as 1 bit wide.
-/// Faults are assigned deterministic, sequential ids in location order, then
-/// bit order, then SA0 before SA1.
+/// of the assignment's left-hand side (the target being driven), resolving
+/// span bounds that are expressions over the design unit's template
+/// parameters. A location whose width cannot be resolved is reported as an
+/// error rather than assumed to be 1 bit wide, since a wrong width produces
+/// fault records that misdescribe the design. Faults are assigned
+/// deterministic, sequential ids in location order, then bit order, then SA0
+/// before SA1.
 class FaultEnumerator
 {
 public:
@@ -36,8 +39,8 @@ private:
     FaultEnumerator(const FaultEnumerator &)            = delete;
     FaultEnumerator &operator=(const FaultEnumerator &) = delete;
 
-    /// @brief Returns the bit-width of the location's left-hand side, or 1 if
-    /// it cannot be statically determined.
+    /// @brief Returns the bit-width of the location's left-hand side, or 0 if
+    /// it cannot be statically resolved.
     std::uint64_t getLocationWidth(hif::Assign *location) const;
 
     hif::semantics::ILanguageSemantics *_sem;

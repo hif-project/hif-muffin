@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Fixed fault enumeration and injection for signals whose width is a parameter expression (issue #9). Such a signal resolved to width 1, so a `WIDTH`-bit target yielded 2 faults instead of `2 * WIDTH`, and the injector's single-bit path replaced the *entire* target with a literal instead of forcing one bit. Span bounds are now resolved through the design unit's template parameters, and the injector takes its width from the enumerated fault rather than recomputing it.
+- A location whose width cannot be resolved is now a reported error naming the assignment and its source position, instead of being silently treated as 1 bit wide.
+- Fixed the injected bit-mask for bit indices >= 63, which previously overflowed a signed 64-bit shift and made the masks for the top bits of a wide vector alias those of its bottom bits. Masks are now sized literals of exactly the location's width.
+- Added product tests covering fixed-width scalar, fixed-width multi-bit and parameterized multi-bit enumeration, plus a behavioral Icarus Verilog test proving a fault on bit N forces bit N and leaves the other bits intact.
+
 ## [1.1.0] - 2026-08-13
 
 - Removed the ecosystem-wide nightly cross-repo integration workflow (`.github/workflows/nightly-integration.yml`). That responsibility now belongs to [hif-regression](https://github.com/hif-project/hif-regression), the ecosystem's dedicated integration/regression repository. This repo's own CI (`ci.yml`) and product tests (including the `and2_round_trip` end-to-end test) are unaffected.
