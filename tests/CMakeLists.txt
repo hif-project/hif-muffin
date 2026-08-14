@@ -33,8 +33,22 @@ if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE)
             -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/and2_round_trip
             -P ${CMAKE_CURRENT_SOURCE_DIR}/and2_round_trip_test.cmake
     )
+    # Per-instance activation-port wiring (issue #10). Kept separate from the
+    # flat round trip because it deliberately drives verilog2hif both ways:
+    # default (inlined) and -s (hierarchy preserved).
+    add_test(
+        NAME hierarchical_wiring
+        COMMAND ${CMAKE_COMMAND}
+            -DMUFFIN_EXECUTABLE=$<TARGET_FILE:muffin>
+            -DVERILOG2HIF_EXECUTABLE=${VERILOG2HIF_EXECUTABLE}
+            -DHIF2VERILOG_EXECUTABLE=${HIF2VERILOG_EXECUTABLE}
+            -DPARENT_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/hier_adder.v
+            -DCHILD_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/half_adder.v
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/hierarchical_wiring
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/hierarchical_wiring_test.cmake
+    )
 else()
-    message(STATUS "verilog2hif/hif2verilog not found; skipping and2_round_trip test.")
+    message(STATUS "verilog2hif/hif2verilog not found; skipping and2_round_trip and hierarchical_wiring tests.")
 endif()
 
 # Fault enumeration across the three width classes. The two register fixtures
