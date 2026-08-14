@@ -22,6 +22,12 @@ namespace injection
 /// same-named identifier in the instantiating scope. A value driven on this
 /// port at the top level therefore reaches every instantiated module,
 /// regardless of nesting depth.
+/// @note Whether there are any instances left to wire depends on the frontend,
+/// not on this visitor: `verilog2hif` inlines them by default and preserves
+/// them under `-s`/`--structure`, while `vhdl2hif` preserves them always.
+/// Seeing `getPortAssignCount() == 0` on a Verilog design is therefore the
+/// expected outcome of a flattened input, not evidence that the wiring is
+/// broken. Both cases are pinned by the `hierarchical_wiring` test.
 class MutPortInjector : public hif::GuideVisitor
 {
 public:

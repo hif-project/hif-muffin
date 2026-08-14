@@ -33,6 +33,24 @@ muffin input.hif --instrument -o instrumented.hif.xml # full pipeline, writes in
 
 Each injectable location yields one SA0 and one SA1 fault **per bit**, so an `N`-bit target contributes `2N` faults, and activating one of them forces that single bit while leaving the rest of the vector as the design computed it. This holds whether the target's width is a literal (`reg [3:0]`) or an expression over a module parameter (`reg [WIDTH-1:0]`). A target whose width cannot be resolved is reported as an error rather than guessed at — see `docs/known-limitations.md`.
 
+## Hierarchy and the activation port
+
+Muffin adds `muffinMutPort` to every RTL view and binds it, at every instance, to the same-named port of the instantiating module — so one value driven at the top reaches every level. **Whether your design still has a hierarchy when Muffin sees it depends on the frontend, not on Muffin:**
+
+| Input | Hierarchy reaching Muffin | Notes |
+|---|---|---|
+| `verilog2hif` (default) | inlined | Instances are flattened into the parent; Muffin instruments one flat view and reports `0 instance(s)`. This is correct behavior, not a failure. |
+| `verilog2hif -s` / `--structure` | preserved | Instances survive, Muffin wires the port through each one. |
+| `vhdl2hif` | preserved | Hierarchy is kept by default; no flag needed. |
+| Hand-written / tool-generated HIF | as authored | Whatever the file contains. |
+
+The Verilog frontend's flattening is *partial and conditional* — it targets output ports written by blocking/continuous assignments — and is skipped entirely under `-s`. Note `-s`'s own warning: it preserves structure "even when this could lead to non-equivalent translation".
+
+Two consequences worth knowing before running a hierarchical campaign:
+
+- **Faults are per design unit, not per instance.** A module instantiated twice has one set of fault ids shared by both instances, so activating one fires it in *every* instance of that module simultaneously. Instrumenting a specific instance is not expressible today.
+- **The `-s` path is not currently simulatable end to end.** `hif2verilog` regenerates internal connection nets as `reg`, which Verilog forbids as the target of an instance's output port. This reproduces with Muffin entirely absent from the pipeline — it is an upstream backend limitation, not an instrumentation defect. See [docs/known-limitations.md](docs/known-limitations.md).
+
 ## Requirements
 
 - Linux (only supported/tested platform)
