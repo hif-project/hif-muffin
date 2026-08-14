@@ -53,6 +53,10 @@ Two consequences worth knowing before running a hierarchical campaign:
 - **Faults are per design unit, not per instance.** A module instantiated twice has one set of fault ids shared by both instances, so activating one fires it in *every* instance of that module simultaneously. Instrumenting a specific instance is not expressible today.
 - **The `-s` path is not currently simulatable end to end.** `hif2verilog` regenerates internal connection nets as `reg`, which Verilog forbids as the target of an instance's output port. This reproduces with Muffin entirely absent from the pipeline — it is an upstream backend limitation, not an instrumentation defect. See [docs/known-limitations.md](docs/known-limitations.md).
 
+## Examples
+
+- [examples/and2](examples/and2/README.md) — start here. A step-by-step tutorial that takes a three-line AND gate through the full pipeline and simulates it with Icarus Verilog, so you can watch stuck-at-0 and stuck-at-1 change the output against the golden circuit.
+
 ## Requirements
 
 - Linux (only supported/tested platform)
