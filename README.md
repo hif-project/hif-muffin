@@ -89,8 +89,9 @@ The tests here drive the real `verilog2hif`/`hif2verilog` tools end to end, not 
 | `param_reg_behavioral` | a fault on bit N forces bit N and leaves the other bits intact (simulated) |
 | `mutport_sensitivity` | changing `muffinMutPort` alone activates and clears a fault, and clocked processes are untouched (simulated) |
 | `hierarchical_wiring` | the activation port is threaded through real instances under `verilog2hif -s` |
+| `hierarchical_behavioral` | a fault in a child module activates through both of its instances, and the parent's own fault does not (simulated) |
 
-They look for `verilog2hif`/`hif2verilog` on `PATH` and, since this repo is normally checked out alongside its siblings, in `../hif-frontend/build`/`../hif-backend/build` too. The two simulated tests additionally need `iverilog`. Anything not found means the affected tests are silently skipped rather than failed — check the CMake configure output for "not found" lines if you expect one to have run.
+They look for `verilog2hif`/`hif2verilog` on `PATH` and, since this repo is normally checked out alongside its siblings, in `../hif-frontend/build`/`../hif-backend/build` too. The three simulated tests additionally need `iverilog`. Anything not found means the affected tests are silently skipped rather than failed — check the CMake configure output for "not found" lines if you expect one to have run.
 
 ## Known limitations
 

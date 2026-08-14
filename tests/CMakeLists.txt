@@ -107,6 +107,28 @@ else()
     message(STATUS "verilog2hif/hif2verilog/iverilog not found; skipping param_reg_behavioral test.")
 endif()
 
+# What the hierarchical wiring actually does, by simulation (issue #10). Split
+# from hierarchical_wiring so that test keeps running without a simulator, and
+# keeps covering the flattened flow where nothing is wired at all.
+if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE AND IVERILOG_EXECUTABLE AND VVP_EXECUTABLE)
+    add_test(
+        NAME hierarchical_behavioral
+        COMMAND ${CMAKE_COMMAND}
+            -DMUFFIN_EXECUTABLE=$<TARGET_FILE:muffin>
+            -DVERILOG2HIF_EXECUTABLE=${VERILOG2HIF_EXECUTABLE}
+            -DHIF2VERILOG_EXECUTABLE=${HIF2VERILOG_EXECUTABLE}
+            -DIVERILOG_EXECUTABLE=${IVERILOG_EXECUTABLE}
+            -DVVP_EXECUTABLE=${VVP_EXECUTABLE}
+            -DPARENT_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/hier_adder.v
+            -DCHILD_FIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/half_adder.v
+            -DTESTBENCH=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/hier_adder_tb.v
+            -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/hierarchical_behavioral
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/hierarchical_behavioral_test.cmake
+    )
+else()
+    message(STATUS "verilog2hif/hif2verilog/iverilog not found; skipping hierarchical_behavioral test.")
+endif()
+
 # Changing muffinMutPort alone must re-evaluate instrumented combinational
 # logic, and must not disturb a clocked process (issue #16).
 if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE AND IVERILOG_EXECUTABLE AND VVP_EXECUTABLE)
