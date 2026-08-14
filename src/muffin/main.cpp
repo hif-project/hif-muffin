@@ -57,7 +57,35 @@ auto main(int argc, char *argv[]) -> int
     messageInfo("Found " + std::to_string(locationVisitor.getLocationCount()) + " injectable location(s).");
 
     muffin::faults::FaultEnumerator faultEnumerator(semantics::HIFSemantics::getInstance());
-    const auto faultList = faultEnumerator.enumerate(locationVisitor.getLocations());
+
+    // Enumeration runs against a throwaway copy, never against the description
+    // we go on to instrument and write out.
+    //
+    // Resolving a location's width means folding its span bounds, and a bound
+    // like `WIDTH - 1` only folds if template-parameter substitution is on.
+    // That substitution rewrites the tree it is resolving -- it replaces the
+    // parameter and drops the declaration behind it, so the module loses its
+    // `parameter WIDTH = 4` header and regenerates with a span of
+    // [18446744073709551615:0]. Setting SimplifyOptions::replace_result = false
+    // does not prevent it (hif-core issue #16).
+    //
+    // Discovery is a deterministic pre-order walk, so the copy's locations come
+    // out in the same order with the same ids, and the fault list computed here
+    // applies unchanged to the original.
+    auto *enumerationCopy = hif::copy(system);
+    muffin::discovery::LocationVisitor enumerationVisitor;
+    enumerationCopy->acceptVisitor(enumerationVisitor);
+
+    if (enumerationVisitor.getLocationCount() != locationVisitor.getLocationCount()) {
+        messageError(
+            "Internal error: discovery found a different number of locations on a copy of the design than on "
+            "the design itself, so enumerated fault ids would not line up with what is instrumented.",
+            nullptr, nullptr);
+    }
+
+    const auto faultList = faultEnumerator.enumerate(enumerationVisitor.getLocations());
+
+    delete enumerationCopy;
 
     messageInfo("Enumerated " + std::to_string(faultList.size()) + " stuck-at fault(s).");
 
