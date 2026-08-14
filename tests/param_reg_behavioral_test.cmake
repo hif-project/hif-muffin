@@ -91,12 +91,16 @@ execute_process(
 )
 
 if(NOT result EQUAL 0)
-    message(FATAL_ERROR "Simulation failed with exit code ${result}.\n${sim_output}\n${sim_error}")
+    message(FATAL_ERROR
+        "Simulation failed with exit code ${result}.\n${sim_output}\n${sim_error}\n"
+        "--- generated Verilog under test ---\n${generated_content}")
 endif()
 
 string(FIND "${sim_output}" "RESULT: PASS" found_at)
 if(found_at EQUAL -1)
-    message(FATAL_ERROR "Simulation did not report a passing result.\n${sim_output}\n${sim_error}")
+    message(FATAL_ERROR
+        "Simulation did not report a passing result.\n${sim_output}\n${sim_error}\n"
+        "--- generated Verilog under test ---\n${generated_content}")
 endif()
 
 message(STATUS "param_reg behavioral test passed.")
