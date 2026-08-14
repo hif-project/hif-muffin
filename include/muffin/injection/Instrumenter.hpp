@@ -49,6 +49,18 @@ private:
     /// @brief Builds the value a single fault forces the location to.
     hif::Value *buildForcedValue(hif::Value *originalCopy, std::uint64_t width, const faults::Fault &fault);
 
+    /// @brief Adds `muffinMutPort` to the sensitivity list of the process
+    /// containing @p location, so that changing the activation port alone
+    /// re-evaluates the instrumented logic.
+    /// @details Instrumenting introduces a read of the activation port into a
+    /// process that did not previously have one; without this the process is
+    /// not sensitive to a signal it now reads, and a fault only becomes
+    /// visible when some unrelated input happens to toggle.
+    /// @note Applies only to purely level-sensitive processes. An
+    /// edge-sensitive process keeps waiting for its edge, and a process with
+    /// an empty sensitivity list is `always @*` and already re-evaluates.
+    void registerActivationPortInSensitivity(hif::Assign *location);
+
     hif::HifFactory _factory;
 };
 

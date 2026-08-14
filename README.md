@@ -31,6 +31,8 @@ muffin input.hif --instrument -o instrumented.hif.xml # full pipeline, writes in
 
 `muffinMutPort == 0` is golden (no fault active); `muffinMutPort == N` activates fault ID `N`. A single instrumented design carries every fault simultaneously — build once, drive the port per simulation run.
 
+Changing `muffinMutPort` is enough on its own: instrumented combinational processes become sensitive to it, so a fault activates and clears without needing to re-apply stimulus. In a clocked process the fault takes effect on the next active clock edge, as any other change to that process's inputs would.
+
 Each injectable location yields one SA0 and one SA1 fault **per bit**, so an `N`-bit target contributes `2N` faults, and activating one of them forces that single bit while leaving the rest of the vector as the design computed it. This holds whether the target's width is a literal (`reg [3:0]`) or an expression over a module parameter (`reg [WIDTH-1:0]`). A target whose width cannot be resolved is reported as an error rather than guessed at — see `docs/known-limitations.md`.
 
 ## Hierarchy and the activation port

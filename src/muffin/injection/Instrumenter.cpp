@@ -85,7 +85,42 @@ void Instrumenter::instrument(const std::vector<hif::Assign *> &locations, const
         when->setDefault(originalRhs);
 
         location->setRightHandSide(when);
+
+        registerActivationPortInSensitivity(location);
     }
+}
+
+void Instrumenter::registerActivationPortInSensitivity(hif::Assign *location)
+{
+    auto *process = hif::getNearestParent<hif::StateTable>(location);
+    if (process == nullptr) {
+        return;
+    }
+
+    // Only purely level-sensitive processes. An edge-sensitive process must
+    // keep waiting for its edge -- a register that updated because the
+    // activation port moved between clock edges would not be the design under
+    // test any more. Sequential faults legitimately take effect on the next
+    // edge.
+    if (!process->sensitivityPos.empty() || !process->sensitivityNeg.empty()) {
+        return;
+    }
+
+    // An empty list is not "sensitive to nothing", it is `always @*`. Adding
+    // the port there would replace implicit sensitivity to everything with
+    // explicit sensitivity to one signal.
+    if (process->sensitivity.empty()) {
+        return;
+    }
+
+    for (auto *entry : process->sensitivity) {
+        auto *identifier = dynamic_cast<hif::Identifier *>(entry);
+        if (identifier != nullptr && identifier->getName() == MutPortInjector::MUT_PORT_NAME) {
+            return;
+        }
+    }
+
+    process->sensitivity.push_back(_factory.identifier(MutPortInjector::MUT_PORT_NAME));
 }
 
 } // namespace injection
