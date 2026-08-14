@@ -24,14 +24,21 @@ namespace
 /// bounds stay symbolic and the width comes back as "not statically known",
 /// which is indistinguishable from a genuinely unresolvable width. Enabling
 /// constant and template-parameter substitution lets such a bound fold to the
-/// parameter's elaborated/default value. This resolves widths only for the
-/// query — `typeGetSpanBitwidth` simplifies a copy of the span, so the design
-/// itself is left untouched and still emits `WIDTH` symbolically.
+/// parameter's elaborated/default value.
+///
+/// `replace_result` must stay false. It defaults to true, meaning "simplify in
+/// place", and `spanGetSize` hands these options straight to `simplify()` on
+/// the design's own Range — so leaving the default substitutes the parameter
+/// into the tree and deletes the declaration behind it. The module then loses
+/// its `parameter WIDTH = 4` header and regenerates with a span of
+/// `[18446744073709551615:0]`, the unsigned reading of the `WIDTH - 1` bound
+/// with WIDTH gone. Asking how wide something is must not modify it.
 hif::manipulation::SimplifyOptions getWidthSimplifyOptions()
 {
     hif::manipulation::SimplifyOptions opts;
     opts.simplify_constants           = true;
     opts.simplify_template_parameters = true;
+    opts.replace_result               = false;
     return opts;
 }
 

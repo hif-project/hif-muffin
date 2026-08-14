@@ -73,6 +73,20 @@ foreach(expected "4'b1110" "4'b0001" "4'b0111" "4'b1000")
     endif()
 endforeach()
 
+# Resolving the width must not consume the parameter. Muffin folds WIDTH only
+# to answer "how many bits is this?"; if that simplification runs in place it
+# substitutes the parameter into the tree and deletes the declaration, and the
+# module regenerates without its `parameter WIDTH = 4` header and with a span
+# of [18446744073709551615:0]. The design must come out as it went in.
+foreach(preserved "parameter WIDTH = 4" "[WIDTH - 1:0]")
+    string(FIND "${generated_content}" "${preserved}" found_at)
+    if(found_at EQUAL -1)
+        message(FATAL_ERROR
+            "Regenerated Verilog no longer contains '${preserved}'. Resolving the location's width has "
+            "mutated the design instead of only querying it.\nFull content:\n${generated_content}")
+    endif()
+endforeach()
+
 # --- Step 4: compile and simulate ---------------------------------------
 
 execute_process(
