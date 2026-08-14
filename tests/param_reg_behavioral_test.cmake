@@ -32,6 +32,33 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "verilog2hif failed with exit code ${result}")
 endif()
 
+# --- Step 1b: baseline round trip, no Muffin -----------------------------
+#
+# Everything below assumes the toolchain can carry this fixture through
+# HIF and back unchanged. Check that first, with Muffin entirely out of the
+# pipeline, so a frontend/backend defect is reported as one instead of being
+# mistaken for an instrumentation bug.
+
+execute_process(
+    COMMAND ${HIF2VERILOG_EXECUTABLE} param_reg.hif.xml -D baseline
+    WORKING_DIRECTORY ${WORK_DIR}
+    RESULT_VARIABLE result
+)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "hif2verilog (baseline, no Muffin) failed with exit code ${result}")
+endif()
+
+file(READ ${WORK_DIR}/baseline/param_reg.v baseline_content)
+foreach(preserved "parameter WIDTH = 4" "[WIDTH - 1:0]")
+    string(FIND "${baseline_content}" "${preserved}" found_at)
+    if(found_at EQUAL -1)
+        message(FATAL_ERROR
+            "PRECONDITION FAILED: a plain verilog2hif -> hif2verilog round trip of this fixture, with no "
+            "Muffin involved, already loses '${preserved}'. This is an upstream toolchain defect, not a "
+            "fault-injection one.\n--- baseline (no Muffin) ---\n${baseline_content}")
+    endif()
+endforeach()
+
 # --- Step 2: instrument --------------------------------------------------
 
 execute_process(
