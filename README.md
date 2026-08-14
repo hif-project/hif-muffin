@@ -58,7 +58,7 @@ Two consequences worth knowing before running a hierarchical campaign:
 - Linux (only supported/tested platform)
 - CMake ≥ 3.1, a C++ compiler
 - A build of [hif-core](https://github.com/hif-project/hif-core), found via `cmake/FindHIF.cmake` (same discovery mechanism used by hif-frontend and hif-backend)
-- To actually run the `and2_round_trip` test: builds of [hif-frontend](https://github.com/hif-project/hif-frontend) (for `verilog2hif`) and [hif-backend](https://github.com/hif-project/hif-backend) (for `hif2verilog`) as sibling directories too — see "Running tests" below
+- To run the product tests: builds of [hif-frontend](https://github.com/hif-project/hif-frontend) (for `verilog2hif`) and [hif-backend](https://github.com/hif-project/hif-backend) (for `hif2verilog`) as sibling directories, plus Icarus Verilog (`iverilog`) for the two simulated tests — see "Running tests" below
 
 ## Building
 
@@ -80,7 +80,17 @@ cmake -DHIF_DIR=/path/to/hif-core ..
 ctest --test-dir build --output-on-failure
 ```
 
-The one CTest here, `and2_round_trip`, exercises the full `verilog2hif -> muffin --list-faults -> muffin --instrument -> hif2verilog` pipeline through the real tools — not just HIF-level checks. It looks for `verilog2hif`/`hif2verilog` on `PATH` and, since this repo is normally checked out alongside its siblings, in `../hif-frontend/build`/`../hif-backend/build` too. If neither sibling is built, the test is silently skipped rather than failing — check the CMake configure output for "verilog2hif/hif2verilog not found" if you expect it to have run.
+The tests here drive the real `verilog2hif`/`hif2verilog` tools end to end, not just HIF-level checks:
+
+| Test | Covers |
+|---|---|
+| `and2_round_trip` | the full `verilog2hif` -> `--list-faults` -> `--instrument` -> `hif2verilog` pipeline |
+| `fault_enumeration_*` | fault counts and per-bit metadata for scalar, fixed-width and parameterized targets |
+| `param_reg_behavioral` | a fault on bit N forces bit N and leaves the other bits intact (simulated) |
+| `mutport_sensitivity` | changing `muffinMutPort` alone activates and clears a fault, and clocked processes are untouched (simulated) |
+| `hierarchical_wiring` | the activation port is threaded through real instances under `verilog2hif -s` |
+
+They look for `verilog2hif`/`hif2verilog` on `PATH` and, since this repo is normally checked out alongside its siblings, in `../hif-frontend/build`/`../hif-backend/build` too. The two simulated tests additionally need `iverilog`. Anything not found means the affected tests are silently skipped rather than failed — check the CMake configure output for "not found" lines if you expect one to have run.
 
 ## Known limitations
 
