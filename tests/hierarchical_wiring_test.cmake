@@ -14,11 +14,14 @@
 #              every view and every instance, and the regenerated Verilog binds
 #              muffinMutPort on each instantiation.
 #
-#          Deliberately asserts on structure rather than simulating: the `-s`
-#          round trip currently regenerates internal connection nets as `reg`,
-#          which Verilog forbids as the target of an instance output port. That
-#          reproduces with no Muffin in the pipeline at all, so it is an
-#          upstream backend limitation and not this repo's to assert against.
+#          Asserts on structure only, by design. It has to cover the flattened
+#          flow, where there is nothing to activate and so nothing to simulate,
+#          and it must keep running on a machine without a simulator. What the
+#          wiring *does* is covered by simulation in hierarchical_behavioral,
+#          which became possible once hif-project/hif-backend#26 was fixed -
+#          before that the regenerated parent declared its instance-connected
+#          nets as `reg`, which Verilog forbids as the target of an instance
+#          output, and no simulator would accept the design.
 # @author : Enrico Fraccaroli
 # -----------------------------------------------------------------------------
 
