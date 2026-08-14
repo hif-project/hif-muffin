@@ -37,19 +37,13 @@ module tb;
         .muffinMutPort(muffinMutPort)
     );
 
-    // Select which fault is active.
-    //
-    // Muffin instruments the design by rewriting the expression driving y, but
-    // muffinMutPort is not added to the sensitivity list of the always block:
-    // changing it alone does not re-evaluate y. Poke the inputs so the next
-    // vector starts from a settled state.
+    // Select which fault is active. Changing muffinMutPort is all it takes:
+    // the instrumented always block is sensitive to it, so y re-evaluates
+    // immediately without the inputs having to move.
     task select_fault;
         input [31:0] id;
         begin
             muffinMutPort = id;
-            a = ~a;
-            #1;
-            a = ~a;
             #1;
         end
     endtask
@@ -74,6 +68,23 @@ module tb;
                 $display("  a=%b b=%b  golden=%b  dut=%b   %s",
                          a, b, golden_y, y, (y === expected) ? "PASS" : "FAIL");
             end
+            if (y !== expected) begin
+                errors = errors + 1;
+            end
+        end
+    endtask
+
+    // Change only muffinMutPort and report what y does, without touching the
+    // inputs at all.
+    task live_check;
+        input [31:0] id;
+        input expected;
+        input [8*34:1] label;
+        begin
+            muffinMutPort = id;
+            #1;
+            $display("  mut=%0d  a=%b b=%b  y=%b   %s   %0s",
+                     id, a, b, y, (y === expected) ? "PASS" : "FAIL", label);
             if (y !== expected) begin
                 errors = errors + 1;
             end
@@ -113,6 +124,23 @@ module tb;
         check(0, 1, 1'b1);
         check(1, 0, 1'b1);
         check(1, 1, 1'b1);
+
+        // --- The port is live: no stimulus needed to switch faults ----------
+        // Everything above re-applies the four input vectors after selecting
+        // each fault, which is what a real campaign does. This last section
+        // shows that re-applying them is not what makes the fault take effect:
+        // a and b are pinned at 1 and never touched again, and only
+        // muffinMutPort moves.
+        $display("");
+        $display("=== Switching faults with the inputs held still (a=1, b=1) ===");
+        a = 1'b1;
+        b = 1'b1;
+        #1;
+        live_check(0, 1'b1, "golden");
+        live_check(1, 1'b0, "fault 1 active   <-- y forced low");
+        live_check(0, 1'b1, "cleared          <-- golden again");
+        live_check(2, 1'b1, "fault 2 active");
+        live_check(0, 1'b1, "cleared");
 
         $display("");
         if (errors == 0) begin

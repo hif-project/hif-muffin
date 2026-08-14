@@ -263,7 +263,7 @@ module and2(
     output reg y,
     input wire [31:0] muffinMutPort
 );
-    always @( a, b ) begin
+    always @( a, b, muffinMutPort ) begin
         y <= ((muffinMutPort == 1) ? (0) : (muffinMutPort == 2) ? (1) : (a & b)
             );
 
@@ -283,6 +283,11 @@ This is the whole idea of Muffin in one expression:
 - `muffinMutPort == 2` — fault 2 — forces `y` to `1`. Stuck-at-1.
 - anything else, including `0` — the original `a & b`.
 
+Notice `muffinMutPort` in the sensitivity list, alongside `a` and `b`. Muffin
+put it there because the block now *reads* it, and that is what makes the port
+live: change it and `y` re-evaluates immediately, with no input transition
+required. Step 6 demonstrates this directly.
+
 Note what this *is not*: three different netlists. It is one design carrying
 every fault at once, selected at runtime by an ordinary input port. A fault
 campaign over N faults is one compilation and N simulations, not N
@@ -299,7 +304,8 @@ faults).
 `tb.v` in this directory instantiates the *generated* module — not the `and2.v`
 you started from, which has no `muffinMutPort`. It computes the golden result
 itself as `wire golden_y = a & b;`, then drives `muffinMutPort` to 0, 1 and 2
-in turn and walks all four input vectors under each:
+in turn and walks all four input vectors under each — and finally switches
+between faults with the inputs held still:
 
 ```sh
 iverilog -o work/sim work/generated/and2.v tb.v
@@ -325,6 +331,13 @@ vvp work/sim
   a=1 b=0  golden=0  dut=1   PASS   <-- fault detected
   a=1 b=1  golden=1  dut=1   PASS
 
+=== Switching faults with the inputs held still (a=1, b=1) ===
+  mut=0  a=1 b=1  y=1   PASS   golden
+  mut=1  a=1 b=1  y=0   PASS   fault 1 active   <-- y forced low
+  mut=0  a=1 b=1  y=1   PASS   cleared          <-- golden again
+  mut=2  a=1 b=1  y=1   PASS   fault 2 active
+  mut=0  a=1 b=1  y=1   PASS   cleared
+
 RESULT: PASS - golden matches a & b, fault 1 behaves as y stuck-at-0, fault 2 as y stuck-at-1.
 ```
 
@@ -336,6 +349,28 @@ the output.
 The testbench fails (prints `RESULT: FAIL` and exits non-zero) if
 `muffinMutPort = 0` ever differs from `a & b`, if fault 1 is not a clean `y`
 stuck-at-0, or if fault 2 is not a clean `y` stuck-at-1.
+
+**The last section is the one to pay attention to.** The three above it
+re-apply all four input vectors after selecting each fault — which is what a
+real campaign does — so they leave open the question of whether it was the
+*input change* that made the fault appear. In the last section `a` and `b` are
+set to 1 once and never touched again, and only `muffinMutPort` moves:
+
+```
+mut=0 -> y=1     golden
+mut=1 -> y=0     fault activates, with no input transition
+mut=0 -> y=1     fault clears again
+```
+
+Driving the port is genuinely all it takes. Muffin adds `muffinMutPort` to the
+sensitivity list of the combinational process it instruments, so `y`
+re-evaluates the moment the port changes. That is what makes a campaign cheap:
+one compiled design, and a loop that writes a fault ID and reads the output.
+
+(In a *clocked* design the fault takes effect on the next active clock edge,
+like any other change to that process's inputs — the port is deliberately not
+added to an edge-sensitive list, since a register has no business updating
+between clock edges.)
 
 ## Step 7 — Read the detection pattern
 
@@ -396,10 +431,6 @@ work/
 
 ## Notes and gotchas
 
-- **`muffinMutPort` is not in the `always` block's sensitivity list.** Changing
-  it alone does not re-evaluate `y`. `tb.v` handles this by toggling an input
-  after switching faults (see the `select_fault` task); if you write your own
-  testbench, apply your input vectors *after* selecting the fault, not before.
 - **Fault IDs come from `faults.json`, not from convention.** They happen to be
   1 and 2 here. Do not hard-code them for a real design — read the JSON.
 - **`muffinMutPort` is an ordinary input.** In a hierarchical design Muffin
