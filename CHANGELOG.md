@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Instrumenting a purely level-sensitive process now adds `muffinMutPort` to its sensitivity list (issue #16). Muffin introduced a read of the activation port without registering it, so on a settled combinational design changing `muffinMutPort` alone did not re-evaluate the logic and a fault only appeared once some unrelated input happened to toggle. Edge-sensitive processes are deliberately left alone — a register must not update between clock edges because the activation port moved — as are processes with an empty sensitivity list (`always @*`), where adding an entry would restrict sensitivity rather than extend it.
+
 - Fixed fault enumeration and injection for signals whose width is a parameter expression (issue #9). Such a signal resolved to width 1, so a `WIDTH`-bit target yielded 2 faults instead of `2 * WIDTH`, and the injector's single-bit path replaced the *entire* target with a literal instead of forcing one bit. Span bounds are now resolved through the design unit's template parameters, and the injector takes its width from the enumerated fault rather than recomputing it.
 - A location whose width cannot be resolved is now a reported error naming the assignment and its source position, instead of being silently treated as 1 bit wide.
 - Fixed the injected bit-mask for bit indices >= 63, which previously overflowed a signed 64-bit shift and made the masks for the top bits of a wide vector alias those of its bottom bits. Masks are now sized literals of exactly the location's width.
