@@ -41,14 +41,8 @@ hif::Value *Instrumenter::buildForcedValue(hif::Value *originalCopy, std::uint64
     std::string mask(static_cast<std::size_t>(width), forceOne ? '0' : '1');
     mask[static_cast<std::size_t>(width - 1 - fault.bitIndex)] = forceOne ? '1' : '0';
 
-    // The literal carries an explicit syntactic type of exactly `width` bits.
-    // Left untyped, its width has to be inferred downstream, and that inference
-    // is not stable across toolchain builds: CI (Debug builds of hif-core and
-    // hif-backend at the pinned refs) emitted a 65-bit constant here, which
-    // Icarus truncated -- "verinum::as_long() truncated 65 bits to 63" -- and
-    // then aborted on a width-mismatch assertion, while the same Muffin
-    // revision against Release builds of the same refs emitted a correct 4-bit
-    // literal. Stating the type leaves nothing to infer either way.
+    // State the literal's type explicitly rather than leaving its width to be
+    // inferred downstream. See issue #14.
     auto *maskType = _factory.bitvector(
         _factory.range(static_cast<std::int64_t>(width) - 1, 0), /* logic */ true, /* resolved */ true,
         /* const_expr */ true, /* isSigned */ false);
