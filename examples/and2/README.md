@@ -67,14 +67,22 @@ export PATH=/path/to/hif-muffin/build:$PATH
 ### Starting from scratch
 
 The four repositories locate each other as siblings, so check them all out
-into the same parent directory, at the `v1.1.0` tag:
+into the same parent directory, on `develop`:
 
 ```sh
 mkdir hif && cd hif
 for repo in hif-core hif-frontend hif-backend hif-muffin; do
-    git clone --branch v1.1.0 https://github.com/hif-project/$repo.git
+    git clone --branch develop https://github.com/hif-project/$repo.git
 done
 ```
+
+`develop` rather than the `v1.1.0` tag, deliberately. The last step of this
+tutorial switches faults with the inputs held still, which relies on Muffin
+adding `muffinMutPort` to the sensitivity list of the logic it instruments.
+That was fixed after v1.1.0 was cut and is not in any release tag yet: build
+`v1.1.0` and the design regenerates as `always @( a, b )`, so selecting a
+fault changes nothing until an input happens to move, and the last section
+reports `RESULT: FAIL`. The transcripts below are from a `develop` build.
 
 Build them in this order — `hif-core` first, since the other three link
 against it (they find `../hif-core` automatically; no `make install` needed):
@@ -102,7 +110,8 @@ iverilog -V | head -1
 ```
 
 (The HIF tools all report `version 1.0.0` — that is the internal tool version,
-not the `v1.1.0` repository release tag. Seeing `1.0.0` here is expected.)
+which is not tied to the repository release tags. Seeing `1.0.0` here is
+expected.)
 
 If a tool starts but complains about `libhif.so`, it cannot find the shared
 library that `hif-core` built; add it to the loader path:
@@ -357,10 +366,15 @@ real campaign does — so they leave open the question of whether it was the
 set to 1 once and never touched again, and only `muffinMutPort` moves:
 
 ```
-mut=0 -> y=1     golden
-mut=1 -> y=0     fault activates, with no input transition
-mut=0 -> y=1     fault clears again
+  mut=0  a=1 b=1  y=1   PASS   golden
+  mut=1  a=1 b=1  y=0   PASS   fault 1 active   <-- y forced low
+  mut=0  a=1 b=1  y=1   PASS   cleared          <-- golden again
 ```
+
+`y` goes low when fault 1 is selected and comes back when it is cleared, with
+`a` and `b` printed on every line so you can see they never move. (`mut=2` is
+in the transcript too; with `a=1 b=1` the golden output is already 1, so
+stuck-at-1 is not observable there — that is the point of Step 7.)
 
 Driving the port is genuinely all it takes. Muffin adds `muffinMutPort` to the
 sensitivity list of the combinational process it instruments, so `y`
