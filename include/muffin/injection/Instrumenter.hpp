@@ -26,8 +26,12 @@ namespace injection
 /// construct), one alternative per fault, so the no-fault-active case is
 /// exactly the original expression. A single-bit location's forced value is
 /// the fault's constant (0 or 1); a wider location's forced value is the
-/// original value with just that bit forced, via a bitwise mask, so the
-/// rest of the vector is left untouched.
+/// original value with just that bit forced, via a bitwise mask of exactly
+/// the location's width, so the rest of the vector is left untouched.
+/// @note The width comes from the `Fault` record rather than being recomputed
+/// from the target's type: the enumerator is the single place that decides how
+/// wide a location is, so the injected value cannot disagree with the fault
+/// list that describes it.
 class Instrumenter
 {
 public:
@@ -45,8 +49,19 @@ private:
     /// @brief Builds the value a single fault forces the location to.
     hif::Value *buildForcedValue(hif::Value *originalCopy, std::uint64_t width, const faults::Fault &fault);
 
+    /// @brief Adds `muffinMutPort` to the sensitivity list of the process
+    /// containing @p location, so that changing the activation port alone
+    /// re-evaluates the instrumented logic.
+    /// @details Instrumenting introduces a read of the activation port into a
+    /// process that did not previously have one; without this the process is
+    /// not sensitive to a signal it now reads, and a fault only becomes
+    /// visible when some unrelated input happens to toggle.
+    /// @note Applies only to purely level-sensitive processes. An
+    /// edge-sensitive process keeps waiting for its edge, and a process with
+    /// an empty sensitivity list is `always @*` and already re-evaluates.
+    void registerActivationPortInSensitivity(hif::Assign *location);
+
     hif::HifFactory _factory;
-    hif::semantics::ILanguageSemantics *_sem;
 };
 
 } // namespace injection
