@@ -25,6 +25,8 @@
 # @author : Enrico Fraccaroli
 # -----------------------------------------------------------------------------
 
+include(${CMAKE_CURRENT_LIST_DIR}/hif_text_assert.cmake)
+
 foreach(required
     MUFFIN_EXECUTABLE VERILOG2HIF_EXECUTABLE HIF2VERILOG_EXECUTABLE PARENT_FIXTURE CHILD_FIXTURE WORK_DIR)
     if(NOT DEFINED ${required})
@@ -150,11 +152,7 @@ endif()
 
 file(READ ${GENERATED_CHILD} generated_child_content)
 foreach(expected "muffinMutPort" "muffinMutPort == 1")
-    string(FIND "${generated_child_content}" "${expected}" found_at)
-    if(found_at EQUAL -1)
-        message(FATAL_ERROR
-            "Regenerated child module is missing expected content: ${expected}\n${generated_child_content}")
-    endif()
+    hif_assert_text_contains("${generated_child_content}" "${expected}" "Regenerated child module")
 endforeach()
 
 message(STATUS "Hierarchical activation-port wiring test passed.")

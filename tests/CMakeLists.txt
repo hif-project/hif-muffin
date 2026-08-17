@@ -22,6 +22,15 @@ find_program(
 find_program(IVERILOG_EXECUTABLE NAMES iverilog)
 find_program(VVP_EXECUTABLE NAMES vvp)
 
+# Regression (#22) for the whitespace-tolerant assertion helper the
+# generated-text checks below rely on. Runs on fixed strings, so it needs
+# neither the sibling tools nor a simulator, and it keeps pinning the property
+# even after a future printer change stops producing today's exact layout.
+add_test(
+    NAME text_assert
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/text_assert_test.cmake
+)
+
 if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE)
     add_test(
         NAME and2_round_trip
