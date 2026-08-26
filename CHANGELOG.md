@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-26
+
 - Added `multi_location_attribution`, a regression for issue #24: two fault locations on one signal must be distinguishable by attribute. A signal driven by two continuous assignments to different part-selects yielded two genuinely different locations - they inject into different halves of the vector - reported identically with `"source": ""` and `"line": 0`, so eight pairs of records differed only in `id` and hif-regression's attribute lookup could select neither. Every previous Muffin fixture here was deliberately written with one assignment per signal to keep `{signal, bit, type}` unique, so no test had ever exercised a signal with more than one location. The defect itself was upstream, in the write-back assignment `verilog2hif` synthesizes for a part-select target, and is fixed by [hif-frontend#38](https://github.com/hif-project/hif-frontend/pull/38); this is the end-to-end cover for it. The same design in procedural form runs as a control, so a regression in the shared reporting path fails on both fixtures rather than looking frontend-specific. (#24)
 
 ## [1.2.0] - 2026-08-16
