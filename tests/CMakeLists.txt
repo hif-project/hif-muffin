@@ -22,6 +22,15 @@ find_program(
 find_program(IVERILOG_EXECUTABLE NAMES iverilog)
 find_program(VVP_EXECUTABLE NAMES vvp)
 
+# Regression (#22) for the whitespace-tolerant assertion helper the
+# generated-text checks below rely on. Runs on fixed strings, so it needs
+# neither the sibling tools nor a simulator, and it keeps pinning the property
+# even after a future printer change stops producing today's exact layout.
+add_test(
+    NAME text_assert
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/text_assert_test.cmake
+)
+
 if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE)
     add_test(
         NAME and2_round_trip
@@ -148,4 +157,50 @@ if(VERILOG2HIF_EXECUTABLE AND HIF2VERILOG_EXECUTABLE AND IVERILOG_EXECUTABLE AND
     )
 else()
     message(STATUS "verilog2hif/hif2verilog/iverilog not found; skipping mutport_sensitivity test.")
+endif()
+
+# Regression (#24): two fault locations on one signal must be distinguishable by
+# attribute. A signal driven by two continuous assignments to different
+# part-selects yielded two locations reported identically - source "", line 0 -
+# so eight pairs of records differed only in `id`, and hif-regression's
+# attribute lookup could select neither.
+#
+# The two cases are the same design in both forms. The procedural one was always
+# attributed correctly and is the control: a regression in the shared reporting
+# path fails on both, which distinguishes it from the frontend defect this was.
+if(VERILOG2HIF_EXECUTABLE)
+    # design                  fixture                    signal lineA lineB per-line total
+    set(multi_location_cases
+        "multi_location_assign:multi_location_assign.v:y:32:33:8:32"
+        "multi_location_proc:multi_location_proc.v:y:20:21:8:16"
+    )
+
+    foreach(multi_location_case ${multi_location_cases})
+        string(REPLACE ":" ";" case_parts ${multi_location_case})
+        list(GET case_parts 0 case_design)
+        list(GET case_parts 1 case_fixture)
+        list(GET case_parts 2 case_signal)
+        list(GET case_parts 3 case_line_a)
+        list(GET case_parts 4 case_line_b)
+        list(GET case_parts 5 case_per_line)
+        list(GET case_parts 6 case_total)
+
+        add_test(
+            NAME multi_location_attribution_${case_design}
+            COMMAND ${CMAKE_COMMAND}
+                -DMUFFIN_EXECUTABLE=$<TARGET_FILE:muffin>
+                -DVERILOG2HIF_EXECUTABLE=${VERILOG2HIF_EXECUTABLE}
+                -DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/${case_fixture}
+                -DDESIGN=${case_design}
+                -DEXPECTED_SIGNAL=${case_signal}
+                -DEXPECTED_LINE_A=${case_line_a}
+                -DEXPECTED_LINE_B=${case_line_b}
+                -DEXPECTED_PER_LINE=${case_per_line}
+                -DEXPECTED_TOTAL=${case_total}
+                -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/multi_location_attribution_${case_design}
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/multi_location_attribution_test.cmake
+        )
+    endforeach()
+else()
+    message(STATUS "verilog2hif not found; skipping multi_location_attribution tests.")
 endif()

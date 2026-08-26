@@ -10,6 +10,8 @@
 # @author : Enrico Fraccaroli
 # -----------------------------------------------------------------------------
 
+include(${CMAKE_CURRENT_LIST_DIR}/hif_text_assert.cmake)
+
 foreach(required
     MUFFIN_EXECUTABLE VERILOG2HIF_EXECUTABLE HIF2VERILOG_EXECUTABLE IVERILOG_EXECUTABLE VVP_EXECUTABLE
     FIXTURE TESTBENCH WORK_DIR)
@@ -49,8 +51,10 @@ if(NOT result EQUAL 0)
 endif()
 
 file(READ ${WORK_DIR}/baseline/param_reg.v baseline_content)
+hif_text_normalize("${baseline_content}" baseline_compact)
 foreach(preserved "parameter WIDTH = 4" "[WIDTH - 1:0]")
-    string(FIND "${baseline_content}" "${preserved}" found_at)
+    hif_text_normalize("${preserved}" preserved_compact)
+    string(FIND "${baseline_compact}" "${preserved_compact}" found_at)
     if(found_at EQUAL -1)
         message(FATAL_ERROR
             "PRECONDITION FAILED: a plain verilog2hif -> hif2verilog round trip of this fixture, with no "
@@ -105,8 +109,10 @@ endforeach()
 # substitutes the parameter into the tree and deletes the declaration, and the
 # module regenerates without its `parameter WIDTH = 4` header and with a span
 # of [18446744073709551615:0]. The design must come out as it went in.
+hif_text_normalize("${generated_content}" generated_compact)
 foreach(preserved "parameter WIDTH = 4" "[WIDTH - 1:0]")
-    string(FIND "${generated_content}" "${preserved}" found_at)
+    hif_text_normalize("${preserved}" preserved_compact)
+    string(FIND "${generated_compact}" "${preserved_compact}" found_at)
     if(found_at EQUAL -1)
         message(FATAL_ERROR
             "Regenerated Verilog no longer contains '${preserved}'. Resolving the location's width has "
